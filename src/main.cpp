@@ -35,13 +35,13 @@ int main() {
     - Clean-up interface, and remove performance issues.
   */
 
-  // std::string block_string =
-  //     "name2 {      key1 = 1;  key2 = 3.7;  key3 = hello;  blockA {    keyA =
-  //     " "valA;     keyA2 = valA2;  }   blockB {     keyB1 = valB;    keyB2 =
-  //     " "valB2;    keyB2 = 17;    keyB3 = 16.3;  }  blockC { keyC = valC;
+  std::string block_string =
+      "name2 {      key1 = 1;  key2 = 3.7;  key3 = hello;  blockA {    keyA "
+      "valA;     keyA2 = valA2;  }   blockB {     keyB1 = valB;    keyB2 ="
+      "valB2;    keyB2 = 17;    keyB3 = 16.3;  }  blockC { keyC = valC";
 
-  std::string block_string = "block{key1=v1; key2 = val2; //key3=val3;\n "
-                             "name{k1=v1;}k4=v4;}block{key4=v4;}";
+  // std::string block_string = "block{key1=v1; key2 = val2; //key3=val3;\n "
+  //                            "name{k1=v1;}k4=v4;}block{key4=v4;}";
 
   std::cout << block_string << "\n";
 
