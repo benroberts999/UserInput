@@ -5,15 +5,25 @@ int main() {
 
   std::cout << "hello world\n";
 
-  InputBlock ib("name1", {{"key1", "val1"}, {"key2", "val2"}});
+  InputBlock ib("name1", {{"key1", "1"}, {"key2", "3.7"}, {"key3", "hello"}});
 
   // ib.add({{"key1", "val1"}, {"key2", "val2"}});
   ib.add(InputBlock("blockA", {{"keyA", "valA"}, {"keyA2", "valA2"}}));
-  ib.add(InputBlock("blockB", {{"keyB", "valB"}, {"keyB2", "valB2"}}));
+  ib.add(InputBlock("blockB", {{"keyB1", "valB"}, {"keyB2", "valB2"}}));
+  ib.add(InputBlock("blockB", {{"keyB2", "17"}, {"keyB3", "16.3"}}));
   ib.add(InputBlock("blockC", {{"keyC", "valC"}}));
-  ib.add(ib);
+  // ib.add(ib);
 
   ib.print();
+
+  std::cout << "\n";
+
+  std::cout << ib.get("key1", 0) << " / " << 1 << "\n";
+  std::cout << ib.get("key12", 0) << " / " << 0 << "\n";
+  std::cout << ib.get("key2", 15.4) << " / " << 3.7 << "\n";
+  std::cout << ib.get<std::string>("key3").value() << "\n";
+
+  std::cout << ib.getBlock("blockB")->get("keyB2", 15) << " / " << 17.3 << "\n";
 
   return 0;
 }
