@@ -7,6 +7,67 @@
 #include <string_view>
 #include <vector>
 
+//******************************************************************************
+inline std::string removeSpaces(std::string lines) {
+
+  // remove spaces
+  lines.erase(std::remove_if(lines.begin(), lines.end(),
+                             [](unsigned char x) { return x == ' '; }),
+              lines.end());
+  // remove tabs
+  lines.erase(std::remove_if(lines.begin(), lines.end(),
+                             [](unsigned char x) { return x == '\t'; }),
+              lines.end());
+  // remove newlines
+  lines.erase(std::remove_if(lines.begin(), lines.end(),
+                             [](unsigned char x) { return x == '\n'; }),
+              lines.end());
+
+  // remove ' and "
+  lines.erase(std::remove_if(lines.begin(), lines.end(),
+                             [](unsigned char x) { return x == '\''; }),
+              lines.end());
+  lines.erase(std::remove_if(lines.begin(), lines.end(),
+                             [](unsigned char x) { return x == '\"'; }),
+              lines.end());
+
+  return lines;
+}
+
+//******************************************************************************
+inline void removeBlockComments(std::string &input) {
+  for (auto posi = input.find("/*"); posi != std::string::npos;
+       posi = input.find("/*")) {
+    auto posf = input.find("*/");
+    if (posf != std::string::npos) {
+      input = input.substr(0, posi) + input.substr(posf + 2);
+    } else {
+      input = input.substr(0, posi);
+    }
+  }
+}
+
+//******************************************************************************
+inline std::string removeComments(const std::string &input) {
+  std::string lines = "";
+  {
+    std::string line;
+    std::stringstream stream1(input);
+    while (std::getline(stream1, line, '\n')) {
+      auto comm1 = line.find('!'); // nb: char, NOT string literal!
+      auto comm2 = line.find('#');
+      auto comm3 = line.find("//"); // str literal here
+      auto comm = std::min(comm1, std::min(comm2, comm3));
+      lines += line.substr(0, comm);
+      lines += '\n';
+    }
+  }
+  removeBlockComments(lines);
+
+  return lines;
+}
+
+//******************************************************************************
 struct Option {
   std::string key;
   std::string value_str;
@@ -25,6 +86,7 @@ struct Option {
   }
 };
 
+//******************************************************************************
 class InputBlock {
 private:
   std::string m_name{};
@@ -32,9 +94,13 @@ private:
   std::vector<InputBlock> m_blocks{};
 
 public:
-  InputBlock(std::string_view name, std::vector<Option> options) {
-    m_name = name;
-    m_options = options;
+  InputBlock(std::string_view name, std::vector<Option> options = {})
+      : m_name(name), m_options(options) {}
+
+  InputBlock(std::string_view name, const std::string &string_input)
+      : m_name(name) {
+    auto fixed_string = removeSpaces(removeComments(string_input));
+    add_block(fixed_string);
   }
 
   void add(InputBlock block) {
@@ -99,7 +165,7 @@ public:
   }
 
   std::optional<InputBlock> getBlock(std::string_view name) const {
-    std::cout << "getBlock: " << name << "\n";
+    // std::cout << "getBlock: " << name << "\n";
     const auto block = std::find(m_blocks.crbegin(), m_blocks.crend(), name);
     if (block == m_blocks.crend())
       return {};
@@ -116,6 +182,16 @@ public:
   }
 
   void print(std::ostream &os = std::cout, int depth = 0) const;
+
+  void add_option(std::string_view in_string) {
+    const auto pos = in_string.find('=');
+    const auto option = in_string.substr(0, pos);
+    const auto value =
+        pos < in_string.length() ? in_string.substr(pos + 1) : "";
+    m_options.push_back({std::string(option), std::string(value)});
+  }
+
+  void add_block(std::string_view string);
 };
 
 //******************************************************************************
@@ -145,4 +221,65 @@ void InputBlock::print(std::ostream &os, int depth) const {
     os << indent;
 
   os << "}\n";
+}
+
+//******************************************************************************
+void InputBlock::add_block(std::string_view string) {
+
+  std::cout << "\n";
+
+  auto start = 0ul;
+
+  while (true) {
+
+    if (start > string.length())
+      break;
+
+    auto end = std::min(string.find(';', start), string.find('{', start));
+
+    if (end > string.length() || start >= end)
+      break;
+
+    if (string.at(end) == ';') {
+
+      this->add_option(string.substr(start, end - start));
+
+    } else {
+
+      const auto block_name = string.substr(start, end - start);
+      start = end + 1;
+
+      int count = 1;
+      auto next_start = start + 1;
+      while (count != 0) {
+        if (next_start > string.length())
+          break;
+        const auto next_end = std::min(string.find('{', next_start),
+                                       string.find('}', next_start));
+        if (next_end > string.length())
+          break;
+
+        if (string.at(next_end) == '{')
+          ++count;
+        else
+          --count;
+
+        if (count == 0) {
+          end = next_end;
+          break;
+        }
+        if (count == 100) {
+          std::cout << "Depth error\n";
+          end = next_end;
+          break;
+        }
+        next_start = next_end + 1;
+      }
+
+      auto &block = m_blocks.emplace_back(block_name);
+      block.add_block(string.substr(start, end - start));
+    }
+
+    start = end + 1;
+  }
 }
