@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <sstream>
@@ -19,6 +20,8 @@ inline std::string removeComments(const std::string &input);
 
 //! Parses a string to type T by stringstream
 template <typename T> T parse_str_to_T(const std::string &value_as_str);
+
+inline std::string file_to_string(const std::ifstream &file);
 
 //******************************************************************************
 //! Simple struct; holds key-value pair, both strings. == compares key
@@ -49,13 +52,22 @@ private:
   std::vector<InputBlock> m_blocks{};
 
 public:
-  InputBlock(std::string_view name = "", std::vector<Option> options = {})
-      : m_name(name), m_options(options) {}
+  InputBlock(){};
 
   InputBlock(std::string_view name, const std::string &string_input)
       : m_name(name) {
     add(string_input);
   }
+
+  InputBlock(std::string_view name, const std::ifstream &file) : m_name(name) {
+    add(file_to_string(file));
+  }
+
+  InputBlock(std::string_view name, std::initializer_list<Option> options = {})
+      : m_name(name), m_options(options) {}
+
+  // InputBlock(std::string_view name, std::vector<Option> options = {})
+  //     : m_name(name), m_options(options) {}
 
   //! Add a new InputBlock (will be merged with existing if names match)
   void add(InputBlock block);
@@ -363,4 +375,15 @@ template <typename T> T parse_str_to_T(const std::string &value_as_str) {
     ss >> value_T;
     return value_T;
   }
+}
+
+//******************************************************************************
+inline std::string file_to_string(const std::ifstream &file) {
+  std::string out;
+  if (!file)
+    return "";
+  // Horribly inneficient...
+  std::ostringstream ss;
+  ss << file.rdbuf();
+  return ss.str();
 }
