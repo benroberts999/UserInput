@@ -25,5 +25,15 @@ int main() {
 
   std::cout << ib.getBlock("blockB")->get("keyB2", 15) << " / " << 17.3 << "\n";
 
+  /*
+  To-do:
+    - Option to read in vector
+    - Parse string into Block
+      - separate into {}-encloded strings, and ;-separated list
+      - each ;-separated: into 'options'
+      - each {}-enclosed: Parse {}-enclosed string into block
+    - Clean-up interface, and remove performance issues.
+  */
+
   return 0;
 }
