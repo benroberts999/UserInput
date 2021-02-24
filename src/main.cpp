@@ -36,17 +36,26 @@ int main() {
   */
 
   std::string block_string =
-      "name2 {      key1 = 1;  key2 = 3.7;  key3 = hello;  blockA {    keyA "
-      "valA;     keyA2 = valA2;  }   blockB {     keyB1 = valB;    keyB2 ="
-      "valB2;    keyB2 = 17;    keyB3 = 16.3;  }  blockC { keyC = valC";
+      "key1 = 1;  key2 = 3.7;  key3 = hello;  blockA {    keyA = "
+      "valA;    keyA2 = valA2;  }  blockB {    keyB1 = valB;    keyB2 = valB2; "
+      "   keyB2 = 17;    keyB3 = 16.3;  }  blockC { keyC = valC; blockD { keyC "
+      "= valC; } blockD { keyC = valC; }} blockC { "
+      "keyC = valC; } ";
 
   // std::string block_string = "block{key1=v1; key2 = val2; //key3=val3;\n "
   //                            "name{k1=v1;}k4=v4;}block{key4=v4;}";
 
-  std::cout << block_string << "\n";
-
   InputBlock ib2("name", block_string);
 
+  ib.print();
+  ib2.print();
+
+  std::cout << "------------\n";
+  ib2.print();
+
+  std::cout << "------------\n";
+  ib2.add("key 4 = 17.6;");
+  ib2.add(Option{"key4", "17.6"});
   ib2.print();
 
   return 0;
