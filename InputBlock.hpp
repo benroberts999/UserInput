@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <istream>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -24,7 +25,7 @@ inline std::string removeComments(const std::string &input);
 template <typename T> T parse_str_to_T(const std::string &value_as_str);
 
 //! Parses entire file into string. Note: v. inefficient
-inline std::string file_to_string(const std::ifstream &file);
+inline std::string file_to_string(const std::istream &file);
 
 //******************************************************************************
 //! Simple struct; holds key-value pair, both strings. == compares key
@@ -76,7 +77,7 @@ public:
     add(string_input);
   }
 
-  InputBlock(std::string_view name, const std::ifstream &file) : m_name(name) {
+  InputBlock(std::string_view name, const std::istream &file) : m_name(name) {
     add(file_to_string(file));
   }
 
@@ -439,7 +440,7 @@ template <typename T> T parse_str_to_T(const std::string &value_as_str) {
 }
 
 //******************************************************************************
-inline std::string file_to_string(const std::ifstream &file) {
+inline std::string file_to_string(const std::istream &file) {
   std::string out;
   if (!file)
     return "";

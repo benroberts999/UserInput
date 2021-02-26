@@ -1,0 +1,14 @@
+Dog{
+  mass = 1.0;
+  speed = 12.0;
+  Puppy{
+    mass = 0.1;
+  }
+}
+Cat{
+  mass = 0.2;
+  speed = 35.0;
+}
+g = -9.8;
+// c++-style comments are ignored
+// h = 7.6;
