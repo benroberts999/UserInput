@@ -8,6 +8,8 @@
 #include <string_view>
 #include <vector>
 
+namespace UserIO {
+
 //******************************************************************************
 //! Removes all white space (space, tab, newline), AND quote marks!
 inline std::string removeSpaces(std::string lines);
@@ -21,6 +23,7 @@ inline std::string removeComments(const std::string &input);
 //! Parses a string to type T by stringstream
 template <typename T> T parse_str_to_T(const std::string &value_as_str);
 
+//! Parses entire file into string. Note: v. inefficient
 inline std::string file_to_string(const std::ifstream &file);
 
 //******************************************************************************
@@ -44,7 +47,18 @@ struct Option {
 };
 
 //******************************************************************************
-//! Holds list of Options, and a list of other InputBlocks
+//! Holds list of Options, and a list of other InputBlocks. Can be initialised
+//! with a list of options, with a string, or from a file (ifstream).
+//! Format for input is, e.g.,:
+/*!
+ BlockName1{
+   option1=value1;
+   option2=value2;
+   InnerBlock{
+     option1=v3;
+   }
+ }
+*/
 class InputBlock {
 private:
   std::string m_name{};
@@ -54,6 +68,9 @@ private:
 public:
   InputBlock(){};
 
+  InputBlock(std::string_view name, std::initializer_list<Option> options = {})
+      : m_name(name), m_options(options) {}
+
   InputBlock(std::string_view name, const std::string &string_input)
       : m_name(name) {
     add(string_input);
@@ -62,12 +79,6 @@ public:
   InputBlock(std::string_view name, const std::ifstream &file) : m_name(name) {
     add(file_to_string(file));
   }
-
-  InputBlock(std::string_view name, std::initializer_list<Option> options = {})
-      : m_name(name), m_options(options) {}
-
-  // InputBlock(std::string_view name, std::vector<Option> options = {})
-  //     : m_name(name), m_options(options) {}
 
   //! Add a new InputBlock (will be merged with existing if names match)
   void add(InputBlock block);
@@ -83,13 +94,26 @@ public:
   //! Comparison of blocks compares the 'name'
   friend bool operator==(InputBlock block, std::string_view name);
   friend bool operator==(std::string_view name, InputBlock block);
+  friend bool operator!=(InputBlock block, std::string_view name);
+  friend bool operator!=(std::string_view name, InputBlock block);
 
-  //! If 'key' exists in the options, returns value. Else, returns default_value
+  //! If 'key' exists in the options, returns value. Else, returns
+  //! default_value. Note: If two keys with same name, will use the later
   template <typename T> T get(std::string_view key, T default_value) const;
 
   //! Returns optional value. Contains value if key exists; empty otherwise.
+  //! Note: If two keys with same name, will use the later
   template <typename T = std::string>
   std::optional<T> get(std::string_view key) const;
+
+  //! Get value from set of nested blocks. .get({block1,block2},option)
+  template <typename T>
+  T get(std::initializer_list<std::string> blocks, std::string_view key,
+        T default_value) const;
+  //! As above, but without default value
+  template <typename T>
+  std::optional<T> get(std::initializer_list<std::string> blocks,
+                       std::string_view key) const;
 
   //! Returns optional InputBlock. Contains InputBlock if block of given name
   //! exists; empty otherwise.
@@ -98,11 +122,13 @@ public:
   //! Get an 'Option' (kay, value) - rarely needed
   std::optional<Option> getOption(std::string_view key) const;
 
-  //! Prints options to screen in user-friendly form. Same form as input string
-  void print(std::ostream &os = std::cout, int depth = 0) const;
+  //! Prints options to screen in user-friendly form. Same form as input string.
+  //! By default prints to cout, but can be given any ostream
+  void print(std::ostream &os = std::cout, int indent_depth = 0) const;
 
 private:
   InputBlock *getBlock_ptr(std::string_view name);
+  const InputBlock *getBlock_cptr(std::string_view name) const;
 
   void add_option(std::string_view in_string);
   void add_blocks_from_string(std::string_view string);
@@ -114,12 +140,10 @@ private:
 void InputBlock::add(InputBlock block) {
   auto existing_block = getBlock_ptr(block.m_name);
   if (existing_block) {
-    std::cout << block.m_name << " yes\n";
     existing_block->m_options.insert(existing_block->m_options.end(),
                                      block.m_options.cbegin(),
                                      block.m_options.cend());
   } else {
-    std::cout << block.m_name << " no\n";
     m_blocks.push_back(block);
   }
 }
@@ -136,9 +160,14 @@ void InputBlock::add(const std::string &string) {
 bool operator==(InputBlock block, std::string_view name) {
   return block.m_name == name;
 }
-
 bool operator==(std::string_view name, InputBlock block) {
   return block == name;
+}
+bool operator!=(InputBlock block, std::string_view name) {
+  return !(block == name);
+}
+bool operator!=(std::string_view name, InputBlock block) {
+  return !(block == name);
 }
 
 //******************************************************************************
@@ -147,7 +176,6 @@ T InputBlock::get(std::string_view key, T default_value) const {
   return get<T>(key).value_or(default_value);
 }
 
-//******************************************************************************
 template <typename T = std::string>
 std::optional<T> InputBlock::get(std::string_view key) const {
   // Use reverse iterators so that we find _last_ option that matches key
@@ -156,6 +184,25 @@ std::optional<T> InputBlock::get(std::string_view key) const {
   if (option == m_options.crend())
     return {};
   return parse_str_to_T<T>(option->value_str);
+}
+
+template <typename T>
+T InputBlock::get(std::initializer_list<std::string> blocks,
+                  std::string_view key, T default_value) const {
+  return get<T>(blocks, key).value_or(default_value);
+}
+
+template <typename T = std::string>
+std::optional<T> InputBlock::get(std::initializer_list<std::string> blocks,
+                                 std::string_view key) const {
+  // Find key in nested blocks
+  const InputBlock *pB = this;
+  for (const auto &block : blocks) {
+    pB = pB->getBlock_cptr(block);
+    if (pB == nullptr)
+      return std::nullopt;
+  }
+  return pB->get<T>(key);
 }
 
 //******************************************************************************
@@ -181,18 +228,20 @@ std::optional<Option> InputBlock::getOption(std::string_view key) const {
 void InputBlock::print(std::ostream &os, int depth) const {
 
   std::string indent = "";
-  for (int i = 0; i < depth; ++i)
+  for (int i = 1; i < depth; ++i)
     indent += "  ";
 
-  os << indent << m_name << " {";
+  // Don't print outer-most name
+  if (depth != 0)
+    os << indent << m_name << " { ";
 
   const auto multi_entry = (!m_blocks.empty() || (m_options.size() > 1));
 
-  if (multi_entry)
+  if (depth != 0 && multi_entry)
     os << "\n";
 
   for (const auto &[key, value] : m_options) {
-    os << (multi_entry ? indent + "  " : " ");
+    os << (depth != 0 && multi_entry ? indent + "  " : "");
     os << key << " = " << value << ';';
     os << (multi_entry ? '\n' : ' ');
   }
@@ -200,10 +249,11 @@ void InputBlock::print(std::ostream &os, int depth) const {
   for (const auto &block : m_blocks)
     block.print(os, depth + 1);
 
-  if (multi_entry)
+  if (depth != 0 && multi_entry)
     os << indent;
 
-  os << "}\n";
+  if (depth != 0)
+    os << "}\n";
 }
 
 //******************************************************************************
@@ -254,19 +304,23 @@ void InputBlock::add_blocks_from_string(std::string_view string) {
           break;
         }
         if (depth_count > 100) {
-          std::cout << "Depth error\n";
+          std::cerr << "FAIL 271 in InputBlock::add_blocks_from_string: Depth "
+                       "error. Check balanced {} in input\n";
           end = next_end;
           break;
         }
         next_start = next_end + 1;
       }
 
+      // Add a new block, populate it with string. Recursive, since blocks may
+      // contain blocks
       auto &block = m_blocks.emplace_back(block_name);
       block.add_blocks_from_string(string.substr(start, end - start));
     }
 
     start = end + 1;
   }
+  // Merge duplicated blocks.
   consolidate();
 }
 
@@ -281,6 +335,13 @@ void InputBlock::add_option(std::string_view in_string) {
 //******************************************************************************
 InputBlock *InputBlock::getBlock_ptr(std::string_view name) {
   auto block = std::find(m_blocks.rbegin(), m_blocks.rend(), name);
+  if (block == m_blocks.rend())
+    return nullptr;
+  return &(*block);
+}
+
+const InputBlock *InputBlock::getBlock_cptr(std::string_view name) const {
+  auto block = std::find(m_blocks.crbegin(), m_blocks.crend(), name);
   if (block == m_blocks.rend())
     return nullptr;
   return &(*block);
@@ -387,3 +448,5 @@ inline std::string file_to_string(const std::ifstream &file) {
   ss << file.rdbuf();
   return ss.str();
 }
+
+} // namespace UserIO
