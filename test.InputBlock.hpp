@@ -19,6 +19,8 @@ void test_InputBlock() {
   std::string input_string = "blockC{ kC1=1; InnerBlock{ kib1=-6; } }";
   ib.add(input_string);
   ib.add(Option{"list", "1,2,3,4,5"});
+  ib.add(Option{"bool1", "true"});
+  ib.add(Option{"bool2", "false"});
 
   run_tests(ib);
 
@@ -83,4 +85,7 @@ void run_tests(const UserIO::InputBlock &ib) {
   const std::vector<int> expected_list{1, 2, 3, 4, 5};
   assert(in_list.size() == expected_list.size() &&
          std::equal(in_list.cbegin(), in_list.cend(), expected_list.cbegin()));
+
+  assert(ib.get<bool>("bool1").value() == true);
+  assert(ib.get<bool>("bool2").value() == false);
 }
