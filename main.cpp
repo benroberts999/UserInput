@@ -31,6 +31,12 @@ int main() {
                     {"list", "A description of what list is"}},
                    true);
 
+  // Check the 'Dog' and 'Puppy' sub-blocks
+  input.check({"Dog"}, {{"mass", "The mass of the dog"},
+                        {"speed", "Speed of the dog"},
+                        {"Puppy", "Block of options for puppy"}});
+  input.check({"Dog", "Puppy"}, {{"mass", "The mass of the puppy"}});
+
   std::cout << "\nSome simple examples:\n";
   // here, 0.0 is default. if 'g' not found, will return 0.0
   std::cout << input.get("g", 0.0) << "\n";

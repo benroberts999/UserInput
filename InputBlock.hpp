@@ -152,6 +152,10 @@ public:
   bool checkBlock(const std::vector<std::pair<std::string, std::string>> &list,
                   bool print = false) const;
 
+  bool check(std::initializer_list<std::string> blocks,
+             const std::vector<std::pair<std::string, std::string>> &list,
+             bool print = false) const;
+
 private:
   // Allows returning std::vector: comma-separated list input
   template <typename T>
@@ -358,6 +362,23 @@ bool InputBlock::checkBlock(
     std::cout << "}\n\n";
   }
   return all_ok;
+}
+
+//! Check one of the sub-blocks
+bool InputBlock::check(
+    std::initializer_list<std::string> blocks,
+    const std::vector<std::pair<std::string, std::string>> &list,
+    bool print) const {
+  // Find key in nested blocks
+  const InputBlock *pB = this;
+  for (const auto &block : blocks) {
+    pB = pB->getBlock_cptr(block);
+    if (pB == nullptr) {
+      // Did not fund nested block... may be fine
+      return false;
+    }
+  }
+  return pB->checkBlock(list, print);
 }
 
 //******************************************************************************
