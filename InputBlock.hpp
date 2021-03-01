@@ -128,6 +128,10 @@ public:
   void print(std::ostream &os = std::cout, int indent_depth = 0) const;
 
 private:
+  // Allows returning std::vector: comma-separated list input
+  template <typename T>
+  std::optional<std::vector<T>> get_vector(std::string_view key) const;
+
   InputBlock *getBlock_ptr(std::string_view name);
   const InputBlock *getBlock_cptr(std::string_view name) const;
 
@@ -172,19 +176,51 @@ bool operator!=(std::string_view name, InputBlock block) {
 }
 
 //******************************************************************************
+template <typename T = std::string>
+std::optional<T> InputBlock::get(std::string_view key) const {
+  if constexpr (std::is_same_v<T, std::vector<int>>) {
+    return get_vector<int>(key);
+  } else if constexpr (std::is_same_v<T, std::vector<double>>) {
+    return get_vector<double>(key);
+  } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+    return get_vector<std::string>(key);
+  } else {
+    // Use reverse iterators so that we find _last_ option that matches key
+    // i.e., assume later options override earlier ones.
+    const auto option = std::find(m_options.crbegin(), m_options.crend(), key);
+    if (option == m_options.crend())
+      return std::nullopt;
+    return parse_str_to_T<T>(option->value_str);
+  }
+}
+
+// special function; allows return of std::vector (for comma-separated list
+// input). Optional of vector is kind of redundant, but is this way so it aligns
+// with the other functions (checks if optional is empty when deciding if should
+// return the default value)
+template <typename T>
+std::optional<std::vector<T>>
+InputBlock::get_vector(std::string_view key) const {
+  // Use reverse iterators so that we find _last_ option that matches key
+  // i.e., assume later options override earlier ones.
+  std::vector<T> out;
+  const auto option = std::find(m_options.crbegin(), m_options.crend(), key);
+  if (option == m_options.crend())
+    return std::nullopt;
+  // return parse_str_to_T<T>(option->value_str);
+  std::stringstream ss(option->value_str);
+  while (ss.good()) {
+    // note: *very* innefficient
+    std::string substr;
+    std::getline(ss, substr, ',');
+    out.push_back(parse_str_to_T<T>(substr));
+  }
+  return out;
+}
+
 template <typename T>
 T InputBlock::get(std::string_view key, T default_value) const {
   return get<T>(key).value_or(default_value);
-}
-
-template <typename T = std::string>
-std::optional<T> InputBlock::get(std::string_view key) const {
-  // Use reverse iterators so that we find _last_ option that matches key
-  // i.e., assume later options override earlier ones.
-  const auto option = std::find(m_options.crbegin(), m_options.crend(), key);
-  if (option == m_options.crend())
-    return {};
-  return parse_str_to_T<T>(option->value_str);
 }
 
 template <typename T>

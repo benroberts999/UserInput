@@ -21,6 +21,7 @@ Main way to interface:
   * .get<Type>({Block1, Block2, Block3}, "key")
     * For nested blocks:
     * Returns value/optional for "key" that lives in Block3, which lives in Block2, which lives in Block1
+  * As well as basic types, can be used for a list of comma-separated input values (returned as std::vector)
 
 You can construct an InputBlock from a string or from a file (or from another InputBlock).
 The string uses c++-style braces to separate blocks, and semi-colon to separate options. c++-style comments are ignored.

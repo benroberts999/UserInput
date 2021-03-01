@@ -47,6 +47,17 @@ int main() {
   // Not in list, so get default:
   std::cout << input.get({"Elephant"}, "speed", 0.0) << "\n";
 
+  std::cout << "List input:\n";
+  // the {0,0,0} is the default list
+  const auto list1 = input.get<std::vector<int>>("list", {0, 0, 0});
+  for (auto &x : list1)
+    std::cout << x << ", ";
+  std::cout << "\n";
+  const auto list2 = input.get<std::vector<double>>({"Cat"}, "list", {0.0});
+  for (auto &x : list2)
+    std::cout << x << ", ";
+  std::cout << "\n";
+
   std::cout << "\nFor full examples: see test code:\n";
   test_InputBlock();
 

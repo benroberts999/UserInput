@@ -16,6 +16,7 @@ void test_InputBlock() {
   ib.add(InputBlock("blockB", {{"keyB2", "17.3"}}));
   std::string input_string = "blockC{ kC1=1; InnerBlock{ kib1=-6; } }";
   ib.add(input_string);
+  ib.add(Option{"list", "1,2,3,4,5"});
 
   run_tests(ib);
 
@@ -66,4 +67,10 @@ void run_tests(const UserIO::InputBlock &ib) {
   assert(ib.get<int>({}, "k1") == 1);
   assert(ib.get<std::string>({"blockA"}, "kA1") == "new_val");
   assert(ib.get<int>({"blockC", "InnerBlock"}, "kib1") == -6);
+
+  // test the input list
+  const auto in_list = ib.get<std::vector<int>>("list", {});
+  const std::vector<int> expected_list{1, 2, 3, 4, 5};
+  assert(in_list.size() == expected_list.size() &&
+         std::equal(in_list.cbegin(), in_list.cend(), expected_list.cbegin()));
 }
