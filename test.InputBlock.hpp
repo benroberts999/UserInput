@@ -6,6 +6,8 @@
 void run_tests(const UserIO::InputBlock &ib);
 
 void test_InputBlock() {
+  // A basic unit test  of UserIO::InputBlock
+  // Tests each function, but not all that thoroughly
 
   using namespace UserIO;
 
@@ -26,6 +28,14 @@ void test_InputBlock() {
   InputBlock ib2("name2", ostr1.str());
 
   // Run same tests on this one
+  run_tests(ib2);
+
+  // test copy construct
+  auto ib3 = ib2;
+  run_tests(ib3);
+
+  // test copy assign
+  ib2 = ib;
   run_tests(ib2);
 
   // Test that the two string outputs are identical

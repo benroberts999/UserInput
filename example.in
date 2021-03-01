@@ -1,3 +1,7 @@
+// This is an example input file.
+// Plain-text file, uses c++-style braces and semi-colons to separate inputs
+// Uses c++-style comments
+
 Dog{
   mass = 1.0;
   speed = 12.0;

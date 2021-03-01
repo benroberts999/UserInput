@@ -2,6 +2,9 @@
 #include "test.InputBlock.hpp"
 #include <iostream>
 
+/*
+This is just an example, showing how to use UserIO::InputBlock
+*/
 int main() {
 
   // Basic example, we will read in from "example.txt"

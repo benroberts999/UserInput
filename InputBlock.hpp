@@ -49,17 +49,17 @@ struct Option {
   std::string key;
   std::string value_str;
 
-  friend bool operator==(Option option, std::string_view key) {
-    return option.key == key;
+  friend bool operator==(Option option, std::string_view tkey) {
+    return option.key == tkey;
   }
-  friend bool operator==(std::string_view key, Option option) {
-    return option == key;
+  friend bool operator==(std::string_view tkey, Option option) {
+    return option == tkey;
   }
-  friend bool operator!=(Option option, std::string_view key) {
-    return !(option == key);
+  friend bool operator!=(Option option, std::string_view tkey) {
+    return !(option == tkey);
   }
-  friend bool operator!=(std::string_view key, Option option) {
-    return !(option == key);
+  friend bool operator!=(std::string_view tkey, Option option) {
+    return !(option == tkey);
   }
 };
 
@@ -192,7 +192,7 @@ bool operator!=(std::string_view name, InputBlock block) {
 }
 
 //******************************************************************************
-template <typename T = std::string>
+template <typename T> // typename T = std::string
 std::optional<T> InputBlock::get(std::string_view key) const {
   if constexpr (IsVector<T>::v) {
     return get_vector<typename IsVector<T>::t>(key);
