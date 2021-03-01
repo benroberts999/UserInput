@@ -143,6 +143,15 @@ public:
   //! By default prints to cout, but can be given any ostream
   void print(std::ostream &os = std::cout, int indent_depth = 0) const;
 
+  //! Check all the options and blocks in this; if any of them are not present
+  //! in 'list', then there is likely a spelling error in the input => returns
+  //! false, warns user, and prints all options to screen. list is a pair:
+  //! {option, description}. Description allws you to explain what each option
+  //! is - great for 'self-documenting' code
+  //! If print=true - will print all options+descriptions even if all good.
+  bool checkBlock(const std::vector<std::pair<std::string, std::string>> &list,
+                  bool print = false) const;
+
 private:
   // Allows returning std::vector: comma-separated list input
   template <typename T>
@@ -303,6 +312,52 @@ void InputBlock::print(std::ostream &os, int depth) const {
 
   if (depth != 0)
     os << "}\n";
+}
+
+//******************************************************************************
+bool InputBlock::checkBlock(
+    const std::vector<std::pair<std::string, std::string>> &list,
+    bool print) const {
+  // Check each option NOT each sub block!
+  // For each input option stored, see if it is allowed
+  // "allowde" means appears in list
+  bool all_ok = true;
+  for (const auto &[key, value] : m_options) {
+    const auto is_optionQ = [&](const auto &l) { return key == l.first; };
+    const auto bad_option =
+        !std::any_of(list.cbegin(), list.cend(), is_optionQ);
+    auto help = (key == "Help" || key == "help") ? true : false;
+    if (bad_option && !help) {
+      all_ok = false;
+      std::cout << "\n⚠️  WARNING: Unclear input option in " << m_name
+                << ": " << key << " = " << value << ";\n"
+                << "Option may be ignored!\n"
+                << "Check spelling (or update list of options)\n";
+    }
+  }
+
+  for (const auto &block : m_blocks) {
+    // (void)value; // not needed
+    const auto is_blockQ = [&](const auto &b) { return block == b.first; };
+    const auto bad_block = !std::any_of(list.cbegin(), list.cend(), is_blockQ);
+    if (bad_block) {
+      all_ok = false;
+      std::cout << "\n⚠️  WARNING: Unclear input block within " << m_name
+                << ": " << block.name() << "{}\n"
+                << "Block and containing options may be ignored!\n"
+                << "Check spelling (or update list of options)\n";
+    }
+  }
+
+  if (!all_ok || print) {
+    std::cout << "\nAvailable " << m_name << " options/blocks are:\n"
+              << m_name << "{\n";
+    std::for_each(list.cbegin(), list.cend(), [](const auto &s) {
+      std::cout << "  " << s.first << ";  // " << s.second << "\n";
+    });
+    std::cout << "}\n\n";
+  }
+  return all_ok;
 }
 
 //******************************************************************************

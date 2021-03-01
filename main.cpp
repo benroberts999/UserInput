@@ -9,10 +9,27 @@ int main() {
 
   // Basic example, we will read in from "example.txt"
   std::ifstream in_file("example.in");
-  UserIO::InputBlock input("examle1", in_file);
+  UserIO::InputBlock input("example1", in_file);
 
   std::cout << "Print input in user-fiendly form:\n";
   input.print();
+
+  // input.check({"g", "h", "Dog", "Cat", "list"});
+  // If any of the input options/blocks in input are not present in this list,
+  // it will warn the user. This is to safeguard against spelling errors (since
+  // if something is spelled wring in the input, it won't be found, so the
+  // default value will be used). Note: Only for outer-most block (does not
+  // recursively check blocks)
+  // If any errors, will print the list of options to screen (and their
+  // descriptions). This is great for 'self-documentation'.
+  // The 'true' at the end prints the entire list to screen, which may be
+  // useful.
+  input.checkBlock({{"g", "A description of what g is"},
+                    {"h", "A description of what h is"},
+                    {"Dog", "A description of what Dog block is"},
+                    {"Cat", "A description of what Cat block is"},
+                    {"list", "A description of what list is"}},
+                   true);
 
   std::cout << "\nSome simple examples:\n";
   // here, 0.0 is default. if 'g' not found, will return 0.0
