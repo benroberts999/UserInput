@@ -27,6 +27,22 @@ template <typename T> T parse_str_to_T(const std::string &value_as_str);
 //! Parses entire file into string. Note: v. inefficient
 inline std::string file_to_string(const std::istream &file);
 
+//! Class to determine if a class template in vector
+template <typename T> struct IsVector {
+  constexpr static bool v = false;
+  typedef T t;
+};
+template <typename T> struct IsVector<std::vector<T>> {
+  constexpr static bool v = true;
+  // nb: returns conatined type of vector
+  typedef T t;
+};
+// e.g.:
+// std::cout << std::boolalpha;
+// std::cout << UserIO::IsVector<int>::v << "\n";
+// std::cout << UserIO::IsVector<std::vector<int>>::v << "\n";
+// std::cout << UserIO::IsVector<std::vector<double>>::v << "\n";
+
 //******************************************************************************
 //! Simple struct; holds key-value pair, both strings. == compares key
 struct Option {
@@ -178,12 +194,8 @@ bool operator!=(std::string_view name, InputBlock block) {
 //******************************************************************************
 template <typename T = std::string>
 std::optional<T> InputBlock::get(std::string_view key) const {
-  if constexpr (std::is_same_v<T, std::vector<int>>) {
-    return get_vector<int>(key);
-  } else if constexpr (std::is_same_v<T, std::vector<double>>) {
-    return get_vector<double>(key);
-  } else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
-    return get_vector<std::string>(key);
+  if constexpr (IsVector<T>::v) {
+    return get_vector<typename IsVector<T>::t>(key);
   } else {
     // Use reverse iterators so that we find _last_ option that matches key
     // i.e., assume later options override earlier ones.
