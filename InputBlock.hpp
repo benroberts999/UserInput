@@ -329,7 +329,10 @@ void InputBlock::print(std::ostream &os, int depth) const {
 
   for (const auto &[key, value] : m_options) {
     os << (depth != 0 && multi_entry ? indent + "  " : "");
-    os << key << " = " << value << ';';
+    if (value == "")
+      os << key << ';';
+    else
+      os << key << " = " << value << ';';
     os << (multi_entry ? '\n' : ' ');
   }
 

@@ -23,6 +23,7 @@ inline void test_InputBlock() {
   ib.add(Option{"list", "1,2,3,4,5"});
   ib.add(Option{"bool1", "true"});
   ib.add(Option{"bool2", "false"});
+  ib.add(Option{"blank", ""}); // test blank option
 
   run_tests(ib);
 
