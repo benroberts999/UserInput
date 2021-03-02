@@ -15,6 +15,7 @@ inline void test_InputBlock() {
   ib.add(Option{"k3", "number_3"});
   ib.add(InputBlock("blockA", {{"kA1", "old_val"}, {"kA1", "new_val"}}));
   ib.add(InputBlock("blockB", {{"keyB1", "valB"}}));
+  ib.add(InputBlock("blockX", {})); // test empty block
   // 'true' means will be merged with existing block (if exists)
   ib.add(InputBlock("blockB", {{"keyB2", "17.3"}}), true);
   std::string input_string = "blockC{ kC1=1; InnerBlock{ kib1=-6; } }";

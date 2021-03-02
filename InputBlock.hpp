@@ -437,7 +437,8 @@ void InputBlock::add_blocks_from_string(std::string_view string) {
 
       // Now, find *matching* close '}' - ensure balanced
       int depth_count = 1;
-      auto next_start = start + 1;
+      // auto next_start = start + 1;
+      auto next_start = start; // + 1;
       while (depth_count != 0) {
         if (next_start > string.length())
           break;
@@ -468,7 +469,8 @@ void InputBlock::add_blocks_from_string(std::string_view string) {
       // Add a new block, populate it with string. Recursive, since blocks may
       // contain blocks
       auto &block = m_blocks.emplace_back(block_name);
-      block.add_blocks_from_string(string.substr(start, end - start));
+      if (end > start)
+        block.add_blocks_from_string(string.substr(start, end - start));
     }
 
     start = end + 1;
