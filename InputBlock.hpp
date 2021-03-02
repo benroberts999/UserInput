@@ -76,6 +76,9 @@ struct Option {
    }
  }
 */
+// nb: I sepparate the function implementations below (in the header file) and
+// mark them as inline. This is for readability only, and ensures this file
+// works as a single-file header-only
 class InputBlock {
 private:
   std::string m_name{};
@@ -83,29 +86,36 @@ private:
   std::vector<InputBlock> m_blocks{};
 
 public:
+  //! Default constructor: name will be blank
   InputBlock(){};
 
+  //! Construct from literal list of 'Options' (see Option struct)
   InputBlock(std::string_view name, std::initializer_list<Option> options = {})
       : m_name(name), m_options(options) {}
 
+  //! Construct from a string with the correct Block{option=value;} format
   InputBlock(std::string_view name, const std::string &string_input)
       : m_name(name) {
     add(string_input);
   }
 
+  //! Construct from plain text file, in Block{option=value;} format
   InputBlock(std::string_view name, const std::istream &file) : m_name(name) {
     add(file_to_string(file));
   }
 
-  //! Add a new InputBlock (will be merged with existing if names match)
-  inline void add(InputBlock block);
+  //! Add a new InputBlock (merge: will be merged with existing if names match)
+  inline void add(InputBlock block, bool merge = false);
   //! Adds a new option to end of list
   inline void add(Option option);
+  inline void add(const std::vector<Option> &options);
   //! Adds options/inputBlocks by parsing a string
   inline void add(const std::string &string);
 
   std::string_view name() const { return m_name; }
+  //! Return const reference to list of options
   const std::vector<Option> &options() const { return m_options; }
+  //! Return const reference to list of blocks
   const std::vector<InputBlock> &blocks() const { return m_blocks; }
 
   //! Comparison of blocks compares the 'name'
@@ -173,9 +183,9 @@ private:
 
 //******************************************************************************
 //******************************************************************************
-void InputBlock::add(InputBlock block) {
+void InputBlock::add(InputBlock block, bool merge) {
   auto existing_block = getBlock_ptr(block.m_name);
-  if (existing_block) {
+  if (merge && existing_block) {
     existing_block->m_options.insert(existing_block->m_options.end(),
                                      block.m_options.cbegin(),
                                      block.m_options.cend());
@@ -186,7 +196,10 @@ void InputBlock::add(InputBlock block) {
 
 //******************************************************************************
 void InputBlock::add(Option option) { m_options.push_back(option); }
-
+void InputBlock::add(const std::vector<Option> &options) {
+  for (const auto &option : options)
+    m_options.push_back(option);
+}
 //******************************************************************************
 void InputBlock::add(const std::string &string) {
   add_blocks_from_string(removeSpaces(removeComments(string)));
@@ -207,7 +220,7 @@ bool operator!=(std::string_view name, InputBlock block) {
 }
 
 //******************************************************************************
-template <typename T> // typename T = std::string
+template <typename T>
 std::optional<T> InputBlock::get(std::string_view key) const {
   if constexpr (IsVector<T>::v) {
     return get_vector<typename IsVector<T>::t>(key);
@@ -243,7 +256,6 @@ InputBlock::get_vector(std::string_view key) const {
   const auto option = std::find(m_options.crbegin(), m_options.crend(), key);
   if (option == m_options.crend())
     return std::nullopt;
-  // return parse_str_to_T<T>(option->value_str);
   std::stringstream ss(option->value_str);
   while (ss.good()) {
     // note: *very* innefficient
@@ -256,6 +268,8 @@ InputBlock::get_vector(std::string_view key) const {
 
 template <typename T>
 T InputBlock::get(std::string_view key, T default_value) const {
+  static_assert(!std::is_same_v<T, const char *>,
+                "Cannot use get with const char* - use std::string");
   return get<T>(key).value_or(default_value);
 }
 
@@ -335,24 +349,25 @@ bool InputBlock::checkBlock(
     bool print) const {
   // Check each option NOT each sub block!
   // For each input option stored, see if it is allowed
-  // "allowde" means appears in list
+  // "allowed" means appears in list
   bool all_ok = true;
-  for (const auto &[key, value] : m_options) {
-    const auto is_optionQ = [&](const auto &l) { return key == l.first; };
+  for (const auto &option : m_options) {
+    const auto is_optionQ = [&](const auto &l) {
+      return option.key == l.first;
+    };
     const auto bad_option =
         !std::any_of(list.cbegin(), list.cend(), is_optionQ);
-    auto help = (key == "Help" || key == "help") ? true : false;
+    auto help = (option.key == "Help" || option.key == "help") ? true : false;
     if (bad_option && !help) {
       all_ok = false;
       std::cout << "\n⚠️  WARNING: Unclear input option in " << m_name
-                << ": " << key << " = " << value << ";\n"
+                << ": " << option.key << " = " << option.value_str << ";\n"
                 << "Option may be ignored!\n"
                 << "Check spelling (or update list of options)\n";
     }
   }
 
   for (const auto &block : m_blocks) {
-    // (void)value; // not needed
     const auto is_blockQ = [&](const auto &b) { return block == b.first; };
     const auto bad_block = !std::any_of(list.cbegin(), list.cend(), is_blockQ);
     if (bad_block) {
@@ -386,7 +401,9 @@ bool InputBlock::check(
     pB = pB->getBlock_cptr(block);
     if (pB == nullptr) {
       // Did not fund nested block... may be fine
-      return false;
+      // Return true, since a missing block is not an issue (or sepparate issue)
+      // We are checking to see if blocks exist that shouldn't
+      return true;
     }
   }
   return pB->checkBlock(list, print);
@@ -456,8 +473,10 @@ void InputBlock::add_blocks_from_string(std::string_view string) {
 
     start = end + 1;
   }
+
   // Merge duplicated blocks.
-  consolidate();
+  // consolidate();
+  // No - want ability to have multiple blocks of same name
 }
 
 //******************************************************************************

@@ -15,7 +15,8 @@ inline void test_InputBlock() {
   ib.add(Option{"k3", "number_3"});
   ib.add(InputBlock("blockA", {{"kA1", "old_val"}, {"kA1", "new_val"}}));
   ib.add(InputBlock("blockB", {{"keyB1", "valB"}}));
-  ib.add(InputBlock("blockB", {{"keyB2", "17.3"}}));
+  // 'true' means will be merged with existing block (if exists)
+  ib.add(InputBlock("blockB", {{"keyB2", "17.3"}}), true);
   std::string input_string = "blockC{ kC1=1; InnerBlock{ kib1=-6; } }";
   ib.add(input_string);
   ib.add(Option{"list", "1,2,3,4,5"});
@@ -44,9 +45,12 @@ inline void test_InputBlock() {
   std::stringstream ostr2;
   ib2.print(ostr2);
   assert(ostr1.str() == ostr2.str());
+
+  std::cout << "\nPassed all tests :)\n";
 }
 
-inline void run_tests(const UserIO::InputBlock &ib) {
+//******************************************************************************
+void run_tests(const UserIO::InputBlock &ib) {
 
   assert(ib.get("k1", 0) == 1);
 
