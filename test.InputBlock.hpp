@@ -3,9 +3,9 @@
 #include <cassert>
 #include <iostream>
 
-void run_tests(const UserIO::InputBlock &ib);
+inline void run_tests(const UserIO::InputBlock &ib);
 
-void test_InputBlock() {
+inline void test_InputBlock() {
   // A basic unit test  of UserIO::InputBlock
   // Tests each function, but not all that thoroughly
 
@@ -46,7 +46,7 @@ void test_InputBlock() {
   assert(ostr1.str() == ostr2.str());
 }
 
-void run_tests(const UserIO::InputBlock &ib) {
+inline void run_tests(const UserIO::InputBlock &ib) {
 
   assert(ib.get("k1", 0) == 1);
 

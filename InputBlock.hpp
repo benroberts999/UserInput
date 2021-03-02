@@ -22,7 +22,7 @@ inline void removeBlockComments(std::string &input);
 inline std::string removeComments(const std::string &input);
 
 //! Parses a string to type T by stringstream
-template <typename T> T parse_str_to_T(const std::string &value_as_str);
+template <typename T> inline T parse_str_to_T(const std::string &value_as_str);
 
 //! Parses entire file into string. Note: v. inefficient
 inline std::string file_to_string(const std::istream &file);
@@ -98,21 +98,21 @@ public:
   }
 
   //! Add a new InputBlock (will be merged with existing if names match)
-  void add(InputBlock block);
+  inline void add(InputBlock block);
   //! Adds a new option to end of list
-  void add(Option option);
+  inline void add(Option option);
   //! Adds options/inputBlocks by parsing a string
-  void add(const std::string &string);
+  inline void add(const std::string &string);
 
   std::string_view name() const { return m_name; }
   const std::vector<Option> &options() const { return m_options; }
   const std::vector<InputBlock> &blocks() const { return m_blocks; }
 
   //! Comparison of blocks compares the 'name'
-  friend bool operator==(InputBlock block, std::string_view name);
-  friend bool operator==(std::string_view name, InputBlock block);
-  friend bool operator!=(InputBlock block, std::string_view name);
-  friend bool operator!=(std::string_view name, InputBlock block);
+  friend inline bool operator==(InputBlock block, std::string_view name);
+  friend inline bool operator==(std::string_view name, InputBlock block);
+  friend inline bool operator!=(InputBlock block, std::string_view name);
+  friend inline bool operator!=(std::string_view name, InputBlock block);
 
   //! If 'key' exists in the options, returns value. Else, returns
   //! default_value. Note: If two keys with same name, will use the later
@@ -134,14 +134,14 @@ public:
 
   //! Returns optional InputBlock. Contains InputBlock if block of given name
   //! exists; empty otherwise.
-  std::optional<InputBlock> getBlock(std::string_view name) const;
+  inline std::optional<InputBlock> getBlock(std::string_view name) const;
 
   //! Get an 'Option' (kay, value) - rarely needed
-  std::optional<Option> getOption(std::string_view key) const;
+  inline std::optional<Option> getOption(std::string_view key) const;
 
   //! Prints options to screen in user-friendly form. Same form as input string.
   //! By default prints to cout, but can be given any ostream
-  void print(std::ostream &os = std::cout, int indent_depth = 0) const;
+  inline void print(std::ostream &os = std::cout, int indent_depth = 0) const;
 
   //! Check all the options and blocks in this; if any of them are not present
   //! in 'list', then there is likely a spelling error in the input => returns
@@ -149,24 +149,26 @@ public:
   //! {option, description}. Description allws you to explain what each option
   //! is - great for 'self-documenting' code
   //! If print=true - will print all options+descriptions even if all good.
-  bool checkBlock(const std::vector<std::pair<std::string, std::string>> &list,
-                  bool print = false) const;
-
-  bool check(std::initializer_list<std::string> blocks,
-             const std::vector<std::pair<std::string, std::string>> &list,
+  inline bool
+  checkBlock(const std::vector<std::pair<std::string, std::string>> &list,
              bool print = false) const;
+
+  inline bool
+  check(std::initializer_list<std::string> blocks,
+        const std::vector<std::pair<std::string, std::string>> &list,
+        bool print = false) const;
 
 private:
   // Allows returning std::vector: comma-separated list input
   template <typename T>
   std::optional<std::vector<T>> get_vector(std::string_view key) const;
 
-  InputBlock *getBlock_ptr(std::string_view name);
-  const InputBlock *getBlock_cptr(std::string_view name) const;
+  inline InputBlock *getBlock_ptr(std::string_view name);
+  inline const InputBlock *getBlock_cptr(std::string_view name) const;
 
-  void add_option(std::string_view in_string);
-  void add_blocks_from_string(std::string_view string);
-  void consolidate();
+  inline void add_option(std::string_view in_string);
+  inline void add_blocks_from_string(std::string_view string);
+  inline void consolidate();
 };
 
 //******************************************************************************
@@ -559,7 +561,7 @@ inline std::string removeComments(const std::string &input) {
 }
 
 //******************************************************************************
-template <typename T> T parse_str_to_T(const std::string &value_as_str) {
+template <typename T> T inline parse_str_to_T(const std::string &value_as_str) {
   if constexpr (std::is_same_v<T, std::string>) {
     // already a string, just return value
     return value_as_str;
