@@ -94,4 +94,7 @@ void run_tests(const UserIO::InputBlock &ib) {
 
   assert(ib.get<bool>("bool1").value() == true);
   assert(ib.get<bool>("bool2").value() == false);
+
+  // Test the 'blank' option - should return default (2)
+  assert(ib.get("blank", 2) == 2);
 }

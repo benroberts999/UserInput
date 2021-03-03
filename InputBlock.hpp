@@ -239,6 +239,8 @@ std::optional<T> InputBlock::get(std::string_view key) const {
     const auto option = std::find(m_options.crbegin(), m_options.crend(), key);
     if (option == m_options.crend())
       return std::nullopt;
+    if (option->value_str == "default" || option->value_str == "")
+      return std::nullopt;
     return parse_str_to_T<T>(option->value_str);
   }
 }
