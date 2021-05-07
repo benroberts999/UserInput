@@ -39,9 +39,9 @@ template <typename T> struct IsVector<std::vector<T>> {
 };
 // e.g.:
 // std::cout << std::boolalpha;
-// std::cout << UserIO::IsVector<int>::v << "\n";
-// std::cout << UserIO::IsVector<std::vector<int>>::v << "\n";
-// std::cout << UserIO::IsVector<std::vector<double>>::v << "\n";
+// std::cout << IO::IsVector<int>::v << "\n";
+// std::cout << IO::IsVector<std::vector<int>>::v << "\n";
+// std::cout << IO::IsVector<std::vector<double>>::v << "\n";
 
 //******************************************************************************
 //! Simple struct; holds key-value pair, both strings. == compares key
@@ -110,7 +110,7 @@ public:
   inline void add(Option option);
   inline void add(const std::vector<Option> &options);
   //! Adds options/inputBlocks by parsing a string
-  inline void add(const std::string &string);
+  inline void add(const std::string &string, bool merge = false);
 
   std::string_view name() const { return m_name; }
   //! Return const reference to list of options
@@ -177,7 +177,7 @@ private:
   inline const InputBlock *getBlock_cptr(std::string_view name) const;
 
   inline void add_option(std::string_view in_string);
-  inline void add_blocks_from_string(std::string_view string);
+  inline void add_blocks_from_string(std::string_view string, bool merge);
   inline void consolidate();
 };
 
@@ -201,8 +201,8 @@ void InputBlock::add(const std::vector<Option> &options) {
     m_options.push_back(option);
 }
 //******************************************************************************
-void InputBlock::add(const std::string &string) {
-  add_blocks_from_string(removeSpaces(removeComments(string)));
+void InputBlock::add(const std::string &string, bool merge) {
+  add_blocks_from_string(removeSpaces(removeComments(string)), merge);
 }
 
 //******************************************************************************
@@ -257,6 +257,8 @@ InputBlock::get_vector(std::string_view key) const {
   std::vector<T> out;
   const auto option = std::find(m_options.crbegin(), m_options.crend(), key);
   if (option == m_options.crend())
+    return std::nullopt;
+  if (option->value_str == "")
     return std::nullopt;
   std::stringstream ss(option->value_str);
   while (ss.good()) {
@@ -363,6 +365,8 @@ bool InputBlock::checkBlock(
     const auto bad_option =
         !std::any_of(list.cbegin(), list.cend(), is_optionQ);
     auto help = (option.key == "Help" || option.key == "help") ? true : false;
+    if (help)
+      print = true;
     if (bad_option && !help) {
       all_ok = false;
       std::cout << "\n⚠️  WARNING: Unclear input option in " << m_name
@@ -415,7 +419,7 @@ bool InputBlock::check(
 }
 
 //******************************************************************************
-void InputBlock::add_blocks_from_string(std::string_view string) {
+void InputBlock::add_blocks_from_string(std::string_view string, bool merge) {
 
   // Expects that string has comments and spaces removed already
 
@@ -442,7 +446,6 @@ void InputBlock::add_blocks_from_string(std::string_view string) {
 
       // Now, find *matching* close '}' - ensure balanced
       int depth_count = 1;
-      // auto next_start = start + 1;
       auto next_start = start; // + 1;
       while (depth_count != 0) {
         if (next_start > string.length())
@@ -474,15 +477,17 @@ void InputBlock::add_blocks_from_string(std::string_view string) {
       // Add a new block, populate it with string. Recursive, since blocks may
       // contain blocks
       auto &block = m_blocks.emplace_back(block_name);
+
       if (end > start)
-        block.add_blocks_from_string(string.substr(start, end - start));
+        block.add_blocks_from_string(string.substr(start, end - start), merge);
     }
 
     start = end + 1;
   }
 
   // Merge duplicated blocks.
-  // consolidate();
+  if (merge)
+    consolidate();
   // No - want ability to have multiple blocks of same name
 }
 
