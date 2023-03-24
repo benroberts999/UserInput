@@ -4,25 +4,27 @@ A data structure for storing user-input.
 Requires c++-17 (could be made to work with earlier versions without too much difficulty).
 
 Each InputBlock contains:
-  * A name
-  * A list of options (stored as {key,value} pairs)
-  * A list of InputBlocks (recursive)
+
+* A name
+* A list of options (stored as {key,value} pairs)
+* A list of InputBlocks (recursive)
 
 Everything is stored as strings. Converted to required data-type on retrieval.
 
 Main way to interface:
-  * ```.get<Type>("key", default_value);```
-    * If key "key" exists, returns its value. Otherwise returns default_value
-    * Type may be deduced from default_value. Type is std::string by default
-  * ```.get<Type>("key")```
-    * Returns a std::optional of type Type
-    * if key "key" exists, will contain it's value. Otherwise empty
-  * ```.get<Type>({}, "key")```
-    * Equivalent to above
-  * ```.get<Type>({Block1, Block2, Block3}, "key")```
-    * For nested blocks:
-    * Returns value/optional for "key" that lives in Block3, which lives in Block2, which lives in Block1
-  * As well as basic types, can be used for a list of comma-separated input values (returned as std::vector)
+
+* ```.get<Type>("key", default_value);```
+  * If key "key" exists, returns its value. Otherwise returns default_value
+  * Type may be deduced from default_value. Type is std::string by default
+* ```.get<Type>("key")```
+  * Returns a std::optional of type Type
+  * if key "key" exists, will contain it's value. Otherwise empty
+* ```.get<Type>({}, "key")```
+  * Equivalent to above
+* ```.get<Type>({Block1, Block2, Block3}, "key")```
+  * For nested blocks:
+  * Returns value/optional for "key" that lives in Block3, which lives in Block2, which lives in Block1
+* As well as basic types, can be used for a list of comma-separated input values (returned as std::vector)
 
 You can construct an InputBlock from a string or from a file (or from another InputBlock).
 The string uses c++-style braces to separate blocks, and semi-colon to separate options. c++-style comments are ignored.
@@ -39,6 +41,6 @@ Block1{
 }
 ```
 
- * Note: white space and new-lines are ignored entirely from input file.
+* Note: white space and new-lines are ignored entirely from input file.
 
 See _main.cpp_ for simple example, and _test.InputBlock.hpp_ for full examples.

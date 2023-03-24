@@ -1,6 +1,10 @@
 /*
-!*.cpp
-!*.hpp
-!*.in
-!*.gitignore
-!*.md
+!**/*.cpp
+!**/*.hpp
+!**/*.in
+!**/*.gitignore
+!**/*.md
+!**/*.sh
+!/catch2/
+!/fmt/
+!/qip/
